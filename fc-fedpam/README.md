@@ -1,160 +1,111 @@
-# FeatureCloud App Blank Template
+# FedPAM 
+FedPAM is a federated framework for discrete Bayesian network learning using Probabilistic Adjacency Matrices (PAMs).
 
-The app-blank template contains an initial state that does not execute commands other than transitioning to the terminal state.
-This template is a starting point for implementing apps by adding more states and operations.
- 
-
-For registering and testing your apps or using other apps, please visit
-[FeatureCloud.ai](https://featurecloud.ai/). And for more information about FeatureCloud architecture,
-please refer to 
-[The FeatureCloud AI Store for Federated Learning in Biomedicine and Beyond](https://arxiv.org/abs/2105.05734) [[1]](#1).
+### Datasets Used
+1. **[Chronic Kidney Disease (CKD) prediction dataset](https://archive.ics.uci.edu/dataset/336/chronic+kidney+disease):** 
+   * Contains 400 samples with 24 discrete medical, laboratory, and demographic variables for **binary classification** of disease presence.
+   * Stored in directory `data/ckd_400` and is split into $K=3$ homogeneous client datasets.
 
 
-## Developing Apps using FeatureCloud library
-FeatureCloud library facilitates app development inside the FeatureCloud platform. To develop apps, developers
-should define their states and register them to the default app.
-
-### defining new states
-For defining new states, in general, developers can use [`AppState`](engine/README.md#appstate-defining-custom-states)
-which supports further communications, transitions, logging, and operations.
-
-#### AppState
-[`AppState`](https://github.com/FeatureCloud/FeatureCloud/tree/master/FeatureCloud/app/engine#appstate-defining-custom-states) is the building block of FeatureCloud apps that covers
-all the scenarios with the verifying mechanism. Each state of 
-the app should extend [`AppState`](https://github.com/FeatureCloud/FeatureCloud/tree/master/FeatureCloud/app/engine#appstate-defining-custom-states), which is an abstract class with two specific abstract methods:
-- [`register`](https://github.com/FeatureCloud/FeatureCloud/tree/master/FeatureCloud/app/engine/README.md#registering-a-specific-transition-for-state-register_transition):
-should be implemented by apps to register possible transitions between the current state to other states.
-This method is part of verifying mechanism in FeatureCloud apps that ensures logically eligible roles can participate in the current state
-and transition to other ones.
-- [`run`](https://github.com/FeatureCloud/FeatureCloud/tree/master/FeatureCloud/app/engine/README.md#executing-states-computation-run): executes all operations and calls for communication between FeatureCloud clients.
-`run` is another part of the verification mechanism in the FeatureCloud library that ensures the transitions to other states are logically correct
-by returning the name of the next state.
 
 
-### Registering apps
-For each state, developers should extend one of the abstract states and call the helper function to register automatically
-the state in the default FeatureCloud app:
+2. [Predict Students' Dropout and Academic Success](https://archive.ics.uci.edu/dataset/697/predict+students+dropout+and+academic+success): 
+    * Contains 4,424 samples with
+36 variables for <b>multi-class classification (3 classes) </b> of academic outcomes based on enrollment
+information and first- and second-semester performance.
+    * Stored in `data/clients_datasets` and is split into $K = 3$ to $10$ client datasets for both homogeneous and heterogeneous settings.
 
-```angular2html
-@app_state(name='initial', role=Role.BOTH, app_name='example')
-class ExampleState(AppState):
-    def register(self):
-        self.register_transition('terminal', Role.BOTH)
+### Config File
 
-    def run(self):
-        self.read_config()
-        self.app.log(self.config)
-        return 'terminal'
+Modify the hyperparameters in `config.yml` file based on your requirements.
+
+```
+fc-fedpam:
+  input:
+    dataset_loc: "client.csv"
+    target: 'class'
+  split:
+    mode: "file"
+    dir: "."  
+  mu: 0.3 
+  lam: 0.3
+  bootstrap_iterations: 100
+  bootstrap_min_iterations: 5 
+  bootstrap_patience: 5
+  max_iterations: 100
+  fl_min_iterations: 5 
+  fl_patience: 5     
+  homogeneous: True
 ```
 
-### building the app docker image
-Once app implementation is done, building the docker image for testing or adding it to
-[FeatureCloud AI store](https://featurecloud.ai/ai-store?view=store&q=&r=0),
-developers should provide the following files.
-#### Dockerization files
+#### Description of Hyperparameters:
 
-For dockerizing apps, regardless of their applications, there should be some specific files:
-
-1. [Dockerfile](Dockerfile)
-2. [server-config](server_config)
-   - [docker-entrypoint.sh](server_config/docker-entrypoint.sh)
-   - [nginx](server_config/nginx)
-   - [supervisord.conf](server_config/supervisord.conf)
-
-Developers should ensure that these files with the same structure and content exist in the same directory as their app
-implementation. 
-
-
-#### App-specific files
-All app-specific files should include data or codes strictly dependent on the app's functionality.
-
-##### main.py
-Each app should be implemented in a directory that includes the [`main.py`](main.py) file, which in turn comprises either direct
-implementation of states or importing them. Moreover, `main` should import `bottle` and `api` packages:
-```angular2html
-from bottle import Bottle
-
-from api.http_ctrl import api_server
-from api.http_web import web_server
-
-import apps.examples.dice
-
-from engine.app import app
-
-server = Bottle()
+1. `dataset_loc`: Location of the csv file containing the discrete dataset. 
+During <b>app testing </b>, use the following directory structure:
 ```
-One can implement desired states in [`states.py`](states.py) and import it, which because of putting 
-[`app_state`](https://github.com/FeatureCloud/FeatureCloud/tree/master/FeatureCloud/app/engine/README.md#registering-states-to-the-app-app_state) on top of state classes, 
-merely importing the states and registering them into the [`app` instance](https://github.com/FeatureCloud/FeatureCloud/tree/master/FeatureCloud/app/engine/README.md#app-instance).     
-
-For running the app, inside a docker container, [`app.register()`](https://github.com/FeatureCloud/FeatureCloud/tree/master/FeatureCloud/app/engine/README.md#registering-all-transitions-appregister)
-should be called to register and verify all transitions; next, api and servers should mount at corresponding paths; and finally
-the server is ready to run the app.
-
-```angular2html
-    app.register()
-    server.mount('/api', api_server)
-    server.mount('/web', web_server)
-    server.run(host='localhost', port=5000)
+data
+└───clients_datasets_directory
+│   └──client1
+│       │client.csv
+│   └──client2
+│       │client.csv
+│   └──client3
+│       │client.csv
 ```
 
-All of the codes above, except for importing the app or, alternatively, implementing states, can be exactly same for all apps.  
+Check the `data` directory in the fc-fedpam repository before running the app to avoid any errors related to file paths. To test the app on the example datasets present in the `data` directory, change `clients_datasets_directory` to `ckd_400`, `clients_datasets/clients_03` etc.
 
-##### requirements.txt
-for installing required python libraries inside the docker image, developers should provide a list of libraries in [requirements.txt](requirements.txt).
-Some requirements are necessary for the FeatureCloud library, which should always be listed, are:
-```angular2html
-bottle
-jsonpickle
-joblib
-numpy
-bios
-pydot
-pyyaml
+During actual federated workflow, you will be required to upload a shared `config.yml` file and a `client.csv` file containing the discrete dataset.
+
+2. `target`: Set this to the prediction variable in the dataset. For CKD-400, use 'class' and for the students success prediction dataset, use 'Target'.
+
+3. `mode`: Controls how the app finds data splits. If set to `mode: 'directory'`, the app looks for subdirectories inside a base folder to use as separate client data splits. Otherwise, it uses the main `/mnt/input` directory as the single split. During testing, you can change client data directories using the FeatureCloud test-bed/workflow interface.
+
+4. `dir`: The base directory (relative to `/mnt/input`) that contains subdirectories for each client's data split. 
+
+5. `mu`: Hyperparameter $\mu$ for tuning the proximal term $\frac{\mu}{2} \lVert P - P_{\text{global}} \rVert _F^2$ that encourages alignment with the global consensus PAM.
+
+6. `lam`: Hyperparameter $\lambda$ for tuning the inner product between normalized Conditional Mutual Information (CMI) matrix $C$ and the PAM $P$ being optimized. The term $-\lambda \langle C, P\rangle$ promotes edges with high CMI.
+
+7. `bootstrap_iterations`: Number of bootstrapping iterations $B$ for resampling over the dataset to create local PAM.
+
+8. `bootstrap_min_iterations`: Minimum number of bootstrapping iterations $B_{min}$.
+
+9. `max_iterations`: Total number of federated learning iterations.
+
+10. `fl_min_iterations`: Minimum number of federated learning iterations.
+
+11. `fl_patience`: Number of patience iterations for early stopping of the federated learning process if the average BIC score across clients does not improve for these many iterations.
+
+12. `homogeneous`: Boolean hyperparameter to switch between homogeneous and heterogeneous learning modes. If the existing client data is "known" to be homogeneous, set `homogeneous: true`. Otherwise, set `homogeneous: False`. In fact, in real-world scenarios, keeping the latter is suggested as the client distributions are usually unknown.
+
+### Steps to run FedPAM application:
+1. Install [Docker](https://docs.docker.com/desktop/setup/install/windows-install) and pip package `featurecloud`:
+
 ```
-
-And the rest should be all other app-required libraries.
-
-##### config.yml
-Each app may need some hyper-parameters or arguments that the end-users should provide. Such data should be included
-in [`config.yml`](https://github.com/FeatureCloud/FeatureCloud/tree/master/FeatureCloud/app#config-file-configyml), which should be read and interpreted by the app. 
-
-### Run YOUR_APPLICATION
-
-#### Prerequisite
-
-To run YOUR_APPLICATION, you should install Docker and FeatureCloud pip package:
-
-```shell
 pip install featurecloud
 ```
 
-Then either download YOUR_APPLICATION image from the FeatureCloud docker repository:
+2. Download the FedPAM image from FeatureCloud Docker repository using
 
-```shell
-featurecloud app download featurecloud.ai/YOUR_APPLICATION
+```
+featurecloud app download featurecloud.ai/fc-fedpam
 ```
 
-Or build the app locally:
+3. OR build the app locally using:
 
-```shell
-featurecloud app build featurecloud.ai/YOUR_APPLICATION
+```
+featurecloud app build featurecloud.ai/fc-fedpam
 ```
 
-Please provide example data so others can run YOUR_APPLICATION with the desired settings in the `config.yml` file.
+## Testing FedPAM Locally
+To test FedPAM on locally stored datasets and simulate the federated learning workflow, you can use the [FeatureCloud test-bed](https://featurecloud.ai/development/test) or [FeatureCloud Workflow](https://featurecloud.ai/projects). You can also use CLI to run the app:
 
-#### Run YOUR_APPLICATION in the test-bed
-
-You can run YOUR_APPLICATION as a standalone app in the [FeatureCloud test-bed](https://featurecloud.ai/development/test) or [FeatureCloud Workflow](https://featurecloud.ai/projects). You can also run the app using CLI:
-
-```shell
-featurecloud test start --app-image featurecloud.ai/YOUR_APPLICATION --client-dirs './sample/c1,./sample/c2' --generic-dir './sample/generic'
+```
+featurecloud test start --app-image featurecloud.ai/fc-fedpam --client-dirs './clients_datasets/clients_03/client1,./clients_datasets/
+clients_03/client2,./clients_datasets/clients_03/client3' --generic-dir './generic'
 ```
 
+<b>Important</b>: Keep the shared `config.yml` file in the `generic` directory.
 
-
-### References
-<a id="1">[1]</a> 
-Matschinske, J., Späth, J., Nasirigerdeh, R., Torkzadehmahani, R., Hartebrodt, A., Orbán, B., Fejér, S., Zolotareva,
-O., Bakhtiari, M., Bihari, B. and Bloice, M., 2021.
-The FeatureCloud AI Store for Federated Learning in Biomedicine and Beyond. arXiv preprint arXiv:2105.05734.
+The results of tests will be stored in `fc-fedpam/data/tests`.
