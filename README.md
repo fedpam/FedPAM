@@ -63,7 +63,7 @@ During actual federated workflow, you will be required to upload a shared `confi
 
 4. `dir`: The base directory (relative to `/mnt/input`) that contains subdirectories for each client's data split. 
 
-5. `mu`: Hyperparameter $\mu$ for tuning the proximal term $\frac{\mu}{2}||P - P_{global}||_F^2$ that encourages alignment with the global consensus PAM.
+5. `mu`: Hyperparameter $\mu$ for tuning the proximal term $\frac{\mu}{2} \lVert P - P_{\text{global}} \rVert _F^2$ that encourages alignment with the global consensus PAM.
 
 6. `lam`: Hyperparameter $\lambda$ for tuning the inner product between normalized Conditional Mutual Information (CMI) matrix $C$ and the PAM $P$ being optimized. The term $-\lambda \langle C, P\rangle$ promotes edges with high CMI.
 
