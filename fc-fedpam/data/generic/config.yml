@@ -1,0 +1,16 @@
+fc-fedpam:
+  input:
+    dataset_loc: "client.csv"
+    target: 'class'
+  split:
+    mode: "file"
+    dir: "."  
+  mu: 0.3 # Change to 0.7 for heterogeneous settings.
+  lam: 0.3
+  bootstrap_iterations: 100
+  bootstrap_min_iterations: 5 
+  bootstrap_patience: 5
+  max_iterations: 100
+  fl_min_iterations: 5 
+  fl_patience: 5     
+  homogeneous: True
