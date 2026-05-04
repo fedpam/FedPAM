@@ -318,7 +318,7 @@ class ReadInputState(AppState):
             raise FileNotFoundError(f"Config file not found at {config_file_path}")
         
         with open(config_file_path) as cfp:
-            config_file = yaml.load(cfp, Loader = yaml.FullLoader)
+            config_file = yaml.safe_load(cfp, Loader = yaml.FullLoader)
 
         configs = config_file['fc-fedpam']
         self.store('dataset_loc', configs['input']['dataset_loc'])
